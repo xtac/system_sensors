@@ -97,6 +97,19 @@ def send_config_message(mqttClient):
                     qos=1,
                     retain=True,
                 )
+            else:
+                # Clear any previously retained discovery config for a disabled
+                # sensor by publishing an empty retained payload. Without this a
+                # sensor that was once enabled and then turned off lingers as a
+                # ghost entity in HA and keeps emitting template warnings
+                # (e.g. "'dict object' has no attribute 'fan_speed'") because the
+                # state payload no longer contains that key.
+                mqttClient.publish(
+                    topic=f'homeassistant/{attr["sensor_type"]}/{devicename}/{sensor}/config',
+                    payload='',
+                    qos=1,
+                    retain=True,
+                )
         except Exception as e:
             write_message_to_console('An error was produced while processing ' + str(sensor) + ' with exception: ' + str(e))
             print(str(settings))
